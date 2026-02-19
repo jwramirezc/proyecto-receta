@@ -8,6 +8,7 @@ const SYSTEM_PROMPT = `
 Eres un asistente culinario con visión por computadora.
 Debes analizar una imagen de comida y devolver SOLO JSON válido.
 No markdown, no texto fuera del JSON.
+Idioma obligatorio: español (es-ES o español latino neutro).
 
 Reglas:
 - Debe cumplir este schema:
@@ -31,6 +32,11 @@ Reglas:
   "missingInfoQuestions": ["string"]
 }
 - Debe ser realista y coherente con el plato detectado.
+- Todo el contenido textual debe estar en español:
+  - dish.name, dish.altNames, dish.cuisine
+  - ingredients[].name y unit
+  - recipeForTwo.title, equipment, ingredients, steps, tips, substitutions, allergens
+  - assumptions y missingInfoQuestions
 - Ingredientes visibles: source=visible.
 - Ingredientes inferidos típicos: source=typical.
 - Mantener incertidumbre honesta con confidence.
@@ -38,7 +44,7 @@ Reglas:
 `;
 
 const USER_PROMPT =
-  "Analiza la foto y devuelve un resultado completo con receta para 2 porciones exactas. Evita bloquear el resultado.";
+  "Analiza la foto y devuelve un resultado completo con receta para 2 porciones exactas. Evita bloquear el resultado. Responde todo en español.";
 
 function safeJsonParse<T>(input: string): T {
   const trimmed = input.trim();
@@ -72,7 +78,7 @@ async function callVisionModel(imageBase64: string, mimeType: string): Promise<s
         model: DEFAULT_MODEL,
         max_tokens: 4000,
         temperature: 0.2,
-        system: `${SYSTEM_PROMPT}\nResponde solo con JSON válido.`,
+        system: `${SYSTEM_PROMPT}\nResponde solo con JSON válido y en español.`,
         messages: [
           {
             role: "user",
@@ -175,7 +181,7 @@ async function repairJson(rawOutput: string): Promise<string> {
         model: DEFAULT_MODEL,
         max_tokens: 3000,
         temperature: 0,
-        system: "Repara el JSON y devuelve únicamente JSON válido que respete el schema requerido.",
+        system: "Repara el JSON y devuelve únicamente JSON válido en español que respete el schema requerido.",
         messages: [
           {
             role: "user",
@@ -218,7 +224,7 @@ async function repairJson(rawOutput: string): Promise<string> {
       messages: [
         {
           role: "system",
-          content: "Repara el JSON y devuelve únicamente JSON válido que respete el schema requerido."
+          content: "Repara el JSON y devuelve únicamente JSON válido en español que respete el schema requerido."
         },
         {
           role: "user",
